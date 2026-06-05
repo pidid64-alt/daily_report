@@ -1,0 +1,45 @@
+name: Ежедневная сводка в Telegram
+
+on:
+  schedule:
+    - cron: '0 3 * * *'    # 08:00 Астана (UTC+5)
+    - cron: '0 8 * * *'    # 13:00 Астана (UTC+5)
+  workflow_dispatch:
+    inputs:
+      report_type:
+        description: 'Тип отчёта'
+        required: true
+        default: 'morning'
+        type: choice
+        options:
+          - morning
+          - lunch
+
+jobs:
+  send-report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Установить зависимости
+        run: pip install requests yfinance
+
+      - name: Определить тип отчёта
+        id: rtype
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "type=${{ github.event.inputs.report_type }}" >> $GITHUB_OUTPUT
+          elif [ "$(date -u +%H)" = "03" ]; then
+            echo "type=morning" >> $GITHUB_OUTPUT
+          else
+            echo "type=lunch" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Отправить отчёт
+        env:
+          REPORT_TYPE: ${{ steps.rtype.outputs.type }}
+        run: python main.py
