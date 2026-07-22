@@ -42,4 +42,4 @@ jobs:
       - name: Отправить отчёт
         env:
           REPORT_TYPE: ${{ steps.rtype.outputs.type }}
-        run: python main.py
+        run: bash report.sh
