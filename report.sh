@@ -16,8 +16,8 @@ case "$REPORT_TYPE" in
     *)       GREETING="📋 Отчёт" ;;
 esac
 
-# --- Погода в Астане ---
-WEATHER=$(curl -s --max-time 6 "wttr.in/Astana?format=%C+%t+(ощущается+как+%f),+ветер+%w,+влажность+%h" 2>/dev/null)
+# --- Погода в Астане (метрическая система: °C, м/с) ---
+WEATHER=$(curl -s --max-time 6 "wttr.in/Astana?format=%C+%t+(ощущается+как+%f),+ветер+%w,+влажность+%h&m" 2>/dev/null)
 [ -z "$WEATHER" ] && WEATHER="нет данных"
 
 # --- Курсы валют: USD/KZT и TRY/KZT ---
