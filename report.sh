@@ -1,11 +1,20 @@
 #!/bin/bash
 # report.sh - отправляет погоду, курсы валют и котировки акций в Telegram
 # Запуск по расписанию (cron), пример через crontab -e:
-# 0 9,21 * * * /home/ironcarrier/report.sh >> /home/ironcarrier/report.log 2>&1                 
+# 0 9,21 * * * /home/ironcarrier/report.sh >> /home/ironcarrier/report.log 2>&1
+
 BOT_TOKEN="8192021172:AAGloiaKYmnTEvF9j-5jeHxIavwekEnG_8k"
 CHAT_ID="1165858145"
 
 NOW=$(date '+%Y-%m-%d %H:%M:%S')
+
+# --- Тип отчёта (передаётся из GitHub Actions, локально по умолчанию "manual") ---
+REPORT_TYPE="${REPORT_TYPE:-manual}"
+case "$REPORT_TYPE" in
+    morning) GREETING="☀️ Доброе утро! Утренняя сводка" ;;
+    lunch)   GREETING="🕐 Дневная сводка" ;;
+    *)       GREETING="📋 Отчёт" ;;
+esac
 
 # --- Погода в Астане ---
 WEATHER=$(curl -s --max-time 6 "wttr.in/Astana?format=%C+%t+(ощущается+как+%f),+ветер+%w,+влажность+%h" 2>/dev/null)
@@ -23,7 +32,8 @@ if [ -n "$FX_JSON" ]; then
     fi
 else
     USD_KZT="нет данных"
-    TRY_KZT="нет данных"                                                                        fi
+    TRY_KZT="нет данных"
+fi
 [ -z "$USD_KZT" ] && USD_KZT="нет данных"
 [ -z "$TRY_KZT" ] && TRY_KZT="нет данных"
 
@@ -36,29 +46,23 @@ fetch_kase_quote() {
     local page
     page=$(curl -sL --max-time 10 -A "Mozilla/5.0 (X11; Linux x86_64)" \
         "https://kase.kz/en/shares/show/${ticker}/" 2>/dev/null)
-
     if [ -z "$page" ]; then
         echo "нет данных"
         return
     fi
-
     echo "$page" | python3 -c "
 import sys, json
-
 ticker = '${ticker}'
 html = sys.stdin.read()
-
 marker = '\"code\":\"' + ticker + '\",\"sec_type\":\"share\"'
 pos = html.find(marker)
 if pos == -1:
     print('нет данных')
     sys.exit()
-
 start = html.rfind('{', 0, pos)
 if start == -1:
     print('нет данных')
     sys.exit()
-
 try:
     obj, _ = json.JSONDecoder().raw_decode(html, start)
     price = obj.get('price')
@@ -82,16 +86,13 @@ except Exception:
 AIRA_PRICE=$(fetch_kase_quote "AIRA")
 HSBK_PRICE=$(fetch_kase_quote "HSBK")
 
-MSG="ОТЧЁТ
+MSG="${GREETING}
 ${NOW}
-
 🌤 Погода в Астане:
   ${WEATHER}
-
 💵 Курсы валют:
   USD/KZT: ${USD_KZT}
   TRY/KZT: ${TRY_KZT}
-
 📈 Акции (KASE):
   AIRA (Air Astana): ${AIRA_PRICE}
   HSBK (Halyk Bank): ${HSBK_PRICE}"
@@ -100,4 +101,4 @@ curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
   --data-urlencode chat_id="${CHAT_ID}" \
   --data-urlencode text="${MSG}" > /dev/null
 
-echo "Отчёт отправлен: ${NOW}"
+echo "Отчёт (${REPORT_TYPE}) отправлен: ${NOW}"
