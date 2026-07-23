@@ -12,7 +12,7 @@ NOW=$(date '+%Y-%m-%d %H:%M:%S')
 REPORT_TYPE="${REPORT_TYPE:-manual}"
 case "$REPORT_TYPE" in
     morning) GREETING="☀️ Доброе утро! Утренняя сводка" ;;
-    lunch)   GREETING="🕐 Дневная сводка" ;;
+    evening) GREETING="🌆 Вечерняя сводка" ;;
     *)       GREETING="📋 Отчёт" ;;
 esac
 
