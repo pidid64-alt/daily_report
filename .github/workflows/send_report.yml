@@ -2,8 +2,8 @@ name: Ежедневная сводка в Telegram
 
 on:
   schedule:
-    - cron: '0 3 * * *'    # 08:00 Астана (UTC+5)
-    - cron: '0 8 * * *'    # 13:00 Астана (UTC+5)
+    - cron: '0 3 * * *'     # 08:00 Астана (UTC+5)
+    - cron: '0 13 * * *'    # 18:00 Астана (UTC+5)
   workflow_dispatch:
     inputs:
       report_type:
@@ -13,7 +13,7 @@ on:
         type: choice
         options:
           - morning
-          - lunch
+          - evening
 
 jobs:
   send-report:
@@ -29,7 +29,7 @@ jobs:
           elif [ "$(date -u +%H)" = "03" ]; then
             echo "type=morning" >> "$GITHUB_OUTPUT"
           else
-            echo "type=lunch" >> "$GITHUB_OUTPUT"
+            echo "type=evening" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Отправить отчёт
